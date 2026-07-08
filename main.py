@@ -28,10 +28,10 @@ class MediaViewer():
         panel_width = int(self.artist.SCREEN_Y * 0.08)
 
         btn_persist_click = 3   # Number of frames for button to appear pressed
-        obj_move_scroll_px = 20 # Number of pixels to move an object when scrolling the mouse wheel
+        obj_move_scroll_px = 5 # Number of pixels to move an object when scrolling the mouse wheel
         while True:
             self.clock.tick(60)
-            self.artist.fill_screen(colour="#1F1F1F")
+            self.artist.fill_screen(color="#1F1F1F")
             self.artist.draw_border("#FF0000", offset=6)
 
             mouse_click_pos = None
@@ -39,11 +39,18 @@ class MediaViewer():
             for event in pg.event.get():
                 if event.type == pg.MOUSEBUTTONDOWN:
                     mouse_click_pos = event.pos
-                elif event.type == pg.MOUSEWHEEL:
-                    scroll_direction = event.y
                 elif event.type == pg.QUIT:
                     pg.quit()
                     return
+            
+            # Check pressed keys
+            pressed = pg.key.get_pressed()
+            if pressed[pg.K_DOWN]:
+                scroll_direction = 1
+            if pressed[pg.K_UP]:
+                scroll_direction = -1
+            if pressed[pg.K_DOWN] and pressed[pg.K_UP]:
+                scroll_direction = None
             
             # Move items down if scrolling
             if scroll_direction is not None:
@@ -55,7 +62,7 @@ class MediaViewer():
                 elif buttons[0].y + buttons[0].h > ymax:
                     buttons[0].y = ymax - buttons[0].h
             
-            # Draw buttons and change colour if clicked
+            # Draw buttons and change color if clicked
             for btn in buttons:
                 clicked = False
                 if mouse_click_pos:
@@ -71,32 +78,19 @@ class MediaViewer():
 
                 getattr(btn, draw_method)()
             
-            # Left
-            self.artist.draw_rect(
-                colour="#001D4A", x=0, y=0,
-                w=panel_width, h=self.artist.SCREEN_Y
+            available_rect = self.artist.draw_filled_borders(
+                l_width=panel_width,
+                r_width=border_width,
+                t_height=banner_height,
+                b_height=border_width,
+                l_color="#001D4A",
+                r_color="#001D4A",
+                t_color="#003687",
+                b_color="#001D4A",
+                order=("left", "right", "top", "bottom")
             )
-            # Right
-            self.artist.draw_rect(
-                colour="#001D4A", x=self.artist.SCREEN_X - border_width, y=0,
-                w=border_width, h=self.artist.SCREEN_Y
-            )
-            # Bottom
-            self.artist.draw_rect(
-                colour="#001D4A", x=0, y=self.artist.SCREEN_Y - border_width,
-                w=self.artist.SCREEN_X, h=border_width
-            )
-            # Top
-            self.artist.draw_rect(
-                colour="#003687", x=0, y=0,
-                w=self.artist.SCREEN_X, h=banner_height
-            )
-            self.artist.draw_rect(
-                colour="#727272ff", x=0, y=banner_height,
-                w=self.artist.SCREEN_X, h=2
-            )
-
-
+            if frame_count == 0:
+                print(available_rect)
 
             frame_count += 1
             pg.display.update()
