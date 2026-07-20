@@ -17,6 +17,8 @@ class Button():
         border_radius: int = 12,
         bg_colour: str = "#0080FF",
         fg_colour: str = "#FFFFFF",
+        in_focus: bool = False, # Draw a white outline if True
+        focus_border_color: str = "#FFFFFF"
     ):
         self.artist = artist
         self.text = text
@@ -24,6 +26,8 @@ class Button():
         self.r = self.x + self.w
         self.b = self.y + self.h
         self.border_radius = border_radius
+        self.in_focus = in_focus
+        self.focus_border_color = focus_border_color
         self.bg_colour = bg_colour
         self.fg_colour = fg_colour
         self.font = pg.font.Font(HERE / "Consolas-Regular.ttf", 16)
@@ -38,6 +42,9 @@ class Button():
             bg_colour, self.x, self.y, self.w, self.h,
             border_radius=self.border_radius
         )
+
+        if self.in_focus:
+            self.draw_focus_border()
 
         cx = self.x + 0.5 * self.w
         cy = self.y + 0.5 * self.h
@@ -61,6 +68,15 @@ class Button():
             new_bg += c_str
 
         self.draw(bg_colour=new_bg)
+
+
+    def draw_focus_border(self):
+        """ Draw a border around the button when in focus. Uses configurable self.focus_border_color """
+        self.artist.draw_rect(
+            self.focus_border_color, self.x, self.y, self.w, self.h,
+            linewidth=2, # TODO: configurable / adaptable to different resolutions and scalings
+            border_radius=self.border_radius
+        )
 
 
     def check_clicked(self, pos: tuple):
