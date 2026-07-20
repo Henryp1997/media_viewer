@@ -1,6 +1,4 @@
 import os
-import time
-from dataclasses import dataclass
 import pygame as pg
 from Artist import Artist
 from Button import Button
@@ -19,7 +17,8 @@ class MediaViewer():
         self.view_cfg = ViewportConfig(
             padding=50,
             n_btns_per_row=5,
-            btn_separation=(150, 150)
+            n_cols=3,
+            btn_separation=(150, 300)
         )
         self.panel_cfg = PanelConfig(
             banner_height=int(self.artist.SCREEN_Y * 0.08),
@@ -57,18 +56,8 @@ class MediaViewer():
                     return
             
             # Check pressed keys. Only register key press if key not pressed on previous frame
-            for name, axis, value in zip(
-                ("right", "left", "up", "down"),
-                (0, 0, 1, 1),
-                (1, -1, 1, -1)
-            ):
-                if arrow_state.__dict__[name]:
-                    focus_idx[axis] += value
+            focus_idx = self.set_focus_idx(arrow_state, focus_idx)
             
-            focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_btns_per_row - 1)
-            focus_idx[1] = max(0, focus_idx[1])
-
-            # Move items down if scrolling
             if buttons:
                 # Draw buttons and change color if clicked
                 for i, btn in enumerate(buttons):
@@ -78,13 +67,17 @@ class MediaViewer():
                     
                     if clicked:
                         # Button was clicked with mouse cursor, shift focus
-                        focus_idx = [i, 0]
+                        focus_idx = [
+                            i // self.view_cfg.n_btns_per_row,
+                            i % self.view_cfg.n_btns_per_row
+                        ]
                         persist_btn_dark[btn] = frame_count
                     
-                    btn.in_focus = (i == focus_idx[0])
+                    btn.in_focus = (i == focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1])
 
                     draw_method = "draw_clicked"
                     if frame_count - persist_btn_dark.get(btn, 0) > btn_persist_click:
+                        # Frame count check to draw 'clicked' version of button longer than just one frame
                         persist_btn_dark[btn] = 0
                         draw_method = "draw"
 
@@ -111,18 +104,20 @@ class MediaViewer():
     def draw_buttons(self, buttons: list[Button], available_rect: pg.Rect):
         """ Draw all buttons in the matrix on the available viewport area """
         pad = self.view_cfg.padding
-        nbtns = self.view_cfg.n_btns_per_row
+        n_per_row = self.view_cfg.n_btns_per_row
+        n_cols = self.view_cfg.n_cols
+        n_total = n_per_row * n_cols
         btn_sep = self.view_cfg.btn_separation
         available_rect.top += pad
         available_rect.left += pad
         available_rect.width -= pad * 2
         available_rect.height -= pad * 2
 
-        avail_btn_width = available_rect.width - btn_sep[0] * (nbtns - 1)
-        btn_width = round(avail_btn_width / nbtns)
-        for i in range(nbtns):
-            x = available_rect.left + i * (btn_width + btn_sep[0])
-            y = available_rect.top
+        avail_btn_width = available_rect.width - btn_sep[0] * (n_per_row - 1)
+        btn_width = round(avail_btn_width / n_per_row)
+        for i in range(n_total):
+            x = available_rect.left + (i % n_per_row) * (btn_width + btn_sep[0])
+            y = available_rect.top + (i // n_per_row) * btn_sep[1]
             buttons.append(
                 Button(
                     self.artist, f"{i}",
@@ -133,6 +128,20 @@ class MediaViewer():
         
         return buttons
     
+
+    def set_focus_idx(self, arrow_state: ArrowKeyState, focus_idx: list[int]):
+        for name, axis, value in zip(
+            ("right", "left", "up", "down"),
+            (1, 1, 0, 0),
+            (1, -1, -1, 1)
+        ):
+            if arrow_state.__dict__[name]:
+                focus_idx[axis] += value
+        
+        focus_idx[0] = max(0, focus_idx[0])
+        focus_idx[1] = min(max(0, focus_idx[1]), self.view_cfg.n_btns_per_row - 1)
+        return focus_idx
+
 
 if __name__ == "__main__":
     viewer = MediaViewer()
