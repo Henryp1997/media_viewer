@@ -74,7 +74,7 @@ class Button():
         """ Draw a border around the button when in focus. Uses configurable self.focus_border_color """
         self.artist.draw_rect(
             self.focus_border_color, self.x, self.y, self.w, self.h,
-            linewidth=2, # TODO: configurable / adaptable to different resolutions and scalings
+            linewidth=3, # TODO: configurable / adaptable to different resolutions and scalings
             border_radius=self.border_radius
         )
 

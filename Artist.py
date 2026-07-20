@@ -61,6 +61,7 @@ class Artist():
         r_width: int,
         t_height: int,
         b_height: int,
+        padding: tuple | list,
         l_color: str,
         r_color: str,
         t_color: str,
@@ -104,6 +105,13 @@ class Artist():
             self.SCREEN_X - r_width - l_width,  # Width
             self.SCREEN_Y - b_height - t_height # Height
         )
+
+        # Adjust rect for padding
+        available_rect.left += padding[0]
+        available_rect.top += padding[1]
+        available_rect.width -= padding[0] * 2
+        available_rect.height -= padding[1] * 2
+
         return available_rect
 
 

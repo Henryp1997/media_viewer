@@ -2,7 +2,7 @@ import os
 import pygame as pg
 from Artist import Artist
 from Button import Button
-from classes import ArrowKeyState, ViewportConfig, PanelConfig
+from classes import ArrowKeyState, ViewportConfig, PanelConfig, ButtonSizeConfig
 
 os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 pg.init()
@@ -14,18 +14,25 @@ class MediaViewer():
         self.clock = pg.time.Clock()
 
         # Layout constants
-        self.view_cfg = ViewportConfig(
-            padding=50,
-            n_btns_per_row=5,
-            n_cols=3,
-            btn_separation=(150, 300)
-        )
         self.panel_cfg = PanelConfig(
             banner_height=int(self.artist.SCREEN_Y * 0.08),
             border_width=int(self.artist.SCREEN_Y * 0.02),
             panel_width=int(self.artist.SCREEN_Y * 0.08)
         )
-        self.btn_height = 200
+        self.view_cfg = ViewportConfig(
+            padding=[130, 80],
+            n_btns_per_row=4,
+            n_cols=3,
+        )
+
+        # Button sizing configuratino
+        width = 280
+        height = int(0.75 * width)
+        self.btn_cfg = ButtonSizeConfig(
+            width=width, height=height,
+            separation=None # Calculated later
+        )
+        
 
 
     def start_viewer(self):
@@ -88,6 +95,7 @@ class MediaViewer():
                 r_width=self.panel_cfg.border_width,
                 t_height=self.panel_cfg.banner_height,
                 b_height=self.panel_cfg.border_width,
+                padding=self.view_cfg.padding,
                 l_color="#001D4A",
                 r_color="#001D4A",
                 t_color="#003687",
@@ -95,6 +103,7 @@ class MediaViewer():
                 order=("left", "right", "top", "bottom")
             )
             if frame_count == 0:
+                self.calc_btn_separation(available_rect)
                 self.draw_buttons(buttons, available_rect)
 
             frame_count += 1
@@ -103,25 +112,19 @@ class MediaViewer():
     
     def draw_buttons(self, buttons: list[Button], available_rect: pg.Rect):
         """ Draw all buttons in the matrix on the available viewport area """
-        pad = self.view_cfg.padding
         n_per_row = self.view_cfg.n_btns_per_row
         n_cols = self.view_cfg.n_cols
         n_total = n_per_row * n_cols
-        btn_sep = self.view_cfg.btn_separation
-        available_rect.top += pad
-        available_rect.left += pad
-        available_rect.width -= pad * 2
-        available_rect.height -= pad * 2
+        btn_sep = self.btn_cfg.separation
+        btn_width = self.btn_cfg.width
 
-        avail_btn_width = available_rect.width - btn_sep[0] * (n_per_row - 1)
-        btn_width = round(avail_btn_width / n_per_row)
         for i in range(n_total):
             x = available_rect.left + (i % n_per_row) * (btn_width + btn_sep[0])
             y = available_rect.top + (i // n_per_row) * btn_sep[1]
             buttons.append(
                 Button(
                     self.artist, f"{i}",
-                    x, y, btn_width, self.btn_height,
+                    x, y, btn_width, self.btn_cfg.height,
                     border_radius=26
                 )
             )
@@ -130,6 +133,10 @@ class MediaViewer():
     
 
     def set_focus_idx(self, arrow_state: ArrowKeyState, focus_idx: list[int]):
+        """ 
+        Set the value of the focus_idx list which points to the
+        matrix location of the button most recently given focus
+        """
         for name, axis, value in zip(
             ("right", "left", "up", "down"),
             (1, 1, 0, 0),
@@ -141,6 +148,27 @@ class MediaViewer():
         focus_idx[0] = max(0, focus_idx[0])
         focus_idx[1] = min(max(0, focus_idx[1]), self.view_cfg.n_btns_per_row - 1)
         return focus_idx
+
+
+    def calc_btn_separation(self, available_rect: pg.Rect) -> tuple[int]:
+        """
+        Calculate the required horizontal and vertical separation
+        between buttons given the padding and button width/height
+        """
+        n_per_row = self.view_cfg.n_btns_per_row
+        max_allowed_btn_width = int(available_rect.width / n_per_row)
+        if self.btn_cfg.width > max_allowed_btn_width:
+            # If the user has configured a width that is too wide, the
+            # separation must be zero and the width must be capped
+            self.btn_cfg.separation = (0, 400)
+            self.btn_cfg.width = max_allowed_btn_width
+            return
+
+        width = self.btn_cfg.width
+        horiz_sep = int(
+            (available_rect.width - (n_per_row * width)) / (n_per_row - 1)
+        )
+        self.btn_cfg.separation = (horiz_sep, 400)
 
 
 if __name__ == "__main__":
