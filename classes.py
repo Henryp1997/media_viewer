@@ -1,12 +1,16 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
-
+@dataclass
 class ArrowKeyState():
     """ Class for holding arrow key pressed state """
     left: bool = False
     right: bool = False
     up: bool = False
     down: bool = False
+
+    def clear(self):
+        for field in fields(self):
+            setattr(self, field.name, False)
 
 
 @dataclass

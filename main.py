@@ -41,37 +41,29 @@ class MediaViewer():
             self.artist.fill_screen(color="#1F1F1F")
             self.artist.draw_border("#FF0000", offset=6)
 
-            # pressed = pg.key.get_pressed()
-            pressed = {pg.K_RIGHT: False, pg.K_LEFT: False, pg.K_UP: False, pg.K_DOWN: False}
-
             mouse_click_pos = None
+            arrow_state.clear() # Crucial for debounce
             for event in pg.event.get():
                 if event.type == pg.MOUSEBUTTONDOWN:
                     mouse_click_pos = event.pos
                 elif event.type == pg.KEYDOWN:
-                    for key in (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN):
-                        pressed[key] = (event.key == key)
+                    for key, name in zip(
+                        (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
+                        ("right", "left", "up", "down")
+                    ):
+                        arrow_state.__dict__[name] = (event.key == key)
                 elif event.type == pg.QUIT:
                     pg.quit()
                     return
             
             # Check pressed keys. Only register key press if key not pressed on previous frame
-            for key, attr, axis, value in zip(
-                (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
+            for name, axis, value in zip(
                 ("right", "left", "up", "down"),
                 (0, 0, 1, 1),
                 (1, -1, 1, -1)
             ):
-                if pressed[key]:
-                    if not arrow_state.__dict__[attr]:
-                        focus_idx[axis] += value
-                        arr_pressed = True
-                    else:
-                        # Arrow key was pressed in last frame, perform no action
-                        arr_pressed = False
-                else:
-                    arr_pressed = False
-                arrow_state.__dict__[attr] = arr_pressed
+                if arrow_state.__dict__[name]:
+                    focus_idx[axis] += value
             
             focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_btns_per_row - 1)
             focus_idx[1] = max(0, focus_idx[1])
