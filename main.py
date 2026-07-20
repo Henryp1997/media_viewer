@@ -20,13 +20,13 @@ class MediaViewer():
             panel_width=int(self.artist.SCREEN_Y * 0.08)
         )
         self.view_cfg = ViewportConfig(
-            padding=[130, 80],
+            padding=[130, 50],
             n_btns_per_row=4,
             n_cols=3,
         )
 
         # Button sizing configuration. Use standard 3:4 movie box art aspect ratio
-        height = 280
+        height = 260
         width = int(0.75 * height)
         self.btn_cfg = ButtonSizeConfig(
             width=width, height=height,
@@ -52,6 +52,7 @@ class MediaViewer():
             for event in pg.event.get():
                 if event.type == pg.MOUSEBUTTONDOWN:
                     mouse_click_pos = event.pos
+                    print(mouse_click_pos)
                 elif event.type == pg.KEYDOWN:
                     for key, name in zip(
                         (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
@@ -81,7 +82,7 @@ class MediaViewer():
                         persist_btn_dark[btn] = frame_count
                     
                     btn.in_focus = (i == focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1])
-
+                    
                     draw_method = "draw_clicked"
                     if frame_count - persist_btn_dark.get(btn, 0) > btn_persist_click:
                         # Frame count check to draw 'clicked' version of button longer than just one frame
@@ -105,6 +106,7 @@ class MediaViewer():
             if frame_count == 0:
                 self.calc_btn_separation(available_rect)
                 self.draw_buttons(buttons, available_rect)
+                self.top_left = (buttons[0].x, buttons[0].y)
 
             frame_count += 1
             pg.display.update()

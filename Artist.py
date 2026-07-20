@@ -105,12 +105,22 @@ class Artist():
             self.SCREEN_X - r_width - l_width,  # Width
             self.SCREEN_Y - b_height - t_height # Height
         )
+        self.draw_rect(
+            "#888888",
+            l_width,  # x
+            t_height, # y
+            self.SCREEN_X - r_width - l_width,  # Width
+            self.SCREEN_Y - b_height - t_height, # Height
+            linewidth=2
+        )
 
         # Adjust rect for padding
         available_rect.left += padding[0]
         available_rect.top += padding[1]
         available_rect.width -= padding[0] * 2
-        available_rect.height -= padding[1] * 2
+
+        # No padding for bottom since the app contents will be painted there if there are enough items 
+        available_rect.height -= padding[1]
 
         return available_rect
 
