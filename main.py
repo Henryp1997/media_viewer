@@ -25,9 +25,9 @@ class MediaViewer():
             n_cols=3,
         )
 
-        # Button sizing configuratino
-        width = 280
-        height = int(0.75 * width)
+        # Button sizing configuration. Use standard 3:4 movie box art aspect ratio
+        height = 280
+        width = int(0.75 * height)
         self.btn_cfg = ButtonSizeConfig(
             width=width, height=height,
             separation=None # Calculated later
