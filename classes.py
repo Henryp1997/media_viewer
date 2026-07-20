@@ -23,6 +23,7 @@ class PanelConfig():
 
 @dataclass
 class ViewportConfig():
-    padding: float
-    n_btns_per_row: float
+    padding: float        # Padding on the top/bottom/left/right of the available viewport
+    n_btns_per_row: float # Number of buttons per row
+    n_cols: float         # Number of columns of buttons
     btn_separation: tuple # (horizontal, vertical) space between button edges in pixels
