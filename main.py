@@ -12,6 +12,7 @@ class MediaViewer():
     def __init__(self):
         self.artist = Artist()
         self.clock = pg.time.Clock()
+        self.available_rect = None
 
         # Layout constants
         self.panel_cfg = PanelConfig(
@@ -34,8 +35,8 @@ class MediaViewer():
         )
         
 
-
     def start_viewer(self):
+        """ Start the application and run the game loop """
         frame_count = 0
         persist_btn_dark = {}
         buttons = []
@@ -82,7 +83,11 @@ class MediaViewer():
                         persist_btn_dark[btn] = frame_count
                     
                     btn.in_focus = (i == focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1])
-                    
+                    if btn.in_focus:
+                        if btn.b > self.available_rect.bottom:
+                            # Button is partially obscured. Initiate a row scroll
+                            print("Scroll needed")
+
                     draw_method = "draw_clicked"
                     if frame_count - persist_btn_dark.get(btn, 0) > btn_persist_click:
                         # Frame count check to draw 'clicked' version of button longer than just one frame
@@ -91,7 +96,7 @@ class MediaViewer():
 
                     getattr(btn, draw_method)()
             
-            available_rect = self.artist.draw_filled_borders(
+            self.available_rect = self.artist.draw_filled_borders(
                 l_width=self.panel_cfg.panel_width,
                 r_width=self.panel_cfg.border_width,
                 t_height=self.panel_cfg.banner_height,
@@ -104,15 +109,15 @@ class MediaViewer():
                 order=("left", "right", "top", "bottom")
             )
             if frame_count == 0:
-                self.calc_btn_separation(available_rect)
-                self.draw_buttons(buttons, available_rect)
+                self.calc_btn_separation()
+                self.draw_buttons(buttons)
                 self.top_left = (buttons[0].x, buttons[0].y)
 
             frame_count += 1
             pg.display.update()
 
     
-    def draw_buttons(self, buttons: list[Button], available_rect: pg.Rect):
+    def draw_buttons(self, buttons: list[Button]):
         """ Draw all buttons in the matrix on the available viewport area """
         n_per_row = self.view_cfg.n_btns_per_row
         n_cols = self.view_cfg.n_cols
@@ -121,8 +126,8 @@ class MediaViewer():
         btn_width = self.btn_cfg.width
 
         for i in range(n_total):
-            x = available_rect.left + (i % n_per_row) * (btn_width + btn_sep[0])
-            y = available_rect.top + (i // n_per_row) * btn_sep[1]
+            x = self.available_rect.left + (i % n_per_row) * (btn_width + btn_sep[0])
+            y = self.available_rect.top + (i // n_per_row) * btn_sep[1]
             buttons.append(
                 Button(
                     self.artist, f"{i}",
@@ -152,13 +157,13 @@ class MediaViewer():
         return focus_idx
 
 
-    def calc_btn_separation(self, available_rect: pg.Rect) -> tuple[int]:
+    def calc_btn_separation(self) -> tuple[int]:
         """
         Calculate the required horizontal and vertical separation
         between buttons given the padding and button width/height
         """
         n_per_row = self.view_cfg.n_btns_per_row
-        max_allowed_btn_width = int(available_rect.width / n_per_row)
+        max_allowed_btn_width = int(self.available_rect.width / n_per_row)
         if self.btn_cfg.width > max_allowed_btn_width:
             # If the user has configured a width that is too wide, the
             # separation must be zero and the width must be capped
@@ -168,7 +173,7 @@ class MediaViewer():
 
         width = self.btn_cfg.width
         horiz_sep = int(
-            (available_rect.width - (n_per_row * width)) / (n_per_row - 1)
+            (self.available_rect.width - (n_per_row * width)) / (n_per_row - 1)
         )
         self.btn_cfg.separation = (horiz_sep, 400)
 
