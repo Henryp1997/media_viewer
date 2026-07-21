@@ -1,28 +1,13 @@
 import pygame as pg
-
+from Display import Display
 
 class Artist():
-    def __init__(
-        self,
-        SCREEN_X: int | None = None,
-        SCREEN_Y: int | None = None
-    ) -> None:
-        self.SCREEN_X = SCREEN_X
-        self.SCREEN_Y = SCREEN_Y
-        if None in (SCREEN_X, SCREEN_Y):
-            info = pg.display.Info()
-            self.screen = pg.display.set_mode(
-                (
-                    info.current_w,
-                    info.current_h
-                ), pg.NOFRAME
-            )
-            self.SCREEN_X = info.current_w
-            self.SCREEN_Y = info.current_h
+    def __init__(self, display: Display) -> None:
+        self.display = display
              
 
     def fill_screen(self, color) -> None:
-        self.screen.fill(color)
+        self.display.screen.fill(color)
 
 
     def draw_rect(self, color, x, y, w, h, linewidth=0, border_radius=0):
@@ -31,7 +16,7 @@ class Artist():
         color (linewidth=0). Set linewidth > 0 to draw just the outline
         """
         pg.draw.rect(
-            self.screen,
+            self.display.screen,
             color,
             pg.Rect((x, y, w, h)),
             border_radius=border_radius,
@@ -40,7 +25,7 @@ class Artist():
 
 
     def draw_border(self, color, linewidth=1, border_radius=0, offset=0) -> None:
-        w, h = self.screen.get_size()
+        w, h = self.display.screen.get_size()
         self.draw_rect(
             color, x=offset, y=offset, w=w-2*offset, h=h-2*offset,
             linewidth=linewidth, border_radius=border_radius
@@ -52,7 +37,7 @@ class Artist():
         Draw a circle. Default is to fill with the specified
         color (linewidth=0). Set linewidth > 0 to draw just the outline
         """
-        pg.draw.circle(self.screen, color, (cx, cy), radius, width=linewidth)
+        pg.draw.circle(self.display.screen, color, (cx, cy), radius, width=linewidth)
 
 
     def draw_filled_borders(
@@ -72,24 +57,24 @@ class Artist():
         def draw_left():
             self.draw_rect(
                 color=l_color, x=0, y=0,
-                w=l_width, h=self.SCREEN_Y
+                w=l_width, h=self.display.SCREEN_Y
             )
         def draw_right():
             self.draw_rect(
                 color=r_color,
-                x=self.SCREEN_X - r_width, y=0,
-                w=r_width, h=self.SCREEN_Y
+                x=self.display.SCREEN_X - r_width, y=0,
+                w=r_width, h=self.display.SCREEN_Y
             )
         def draw_top():
             self.draw_rect(
                 color=t_color, x=0, y=0,
-                w=self.SCREEN_X, h=t_height
+                w=self.display.SCREEN_X, h=t_height
             )
         def draw_bottom():
             self.draw_rect(
                 color=b_color,
-                x=0, y=self.SCREEN_Y - b_height,
-                w=self.SCREEN_X, h=b_height
+                x=0, y=self.display.SCREEN_Y - b_height,
+                w=self.display.SCREEN_X, h=b_height
             )
         draw_methods = {
             "left": draw_left, "right": draw_right,
@@ -102,15 +87,15 @@ class Artist():
         available_rect = pg.Rect(
             l_width,  # x
             t_height, # y
-            self.SCREEN_X - r_width - l_width,  # Width
-            self.SCREEN_Y - b_height - t_height # Height
+            self.display.SCREEN_X - r_width - l_width,  # Width
+            self.display.SCREEN_Y - b_height - t_height # Height
         )
         self.draw_rect(
             "#888888",
             l_width,  # x
             t_height, # y
-            self.SCREEN_X - r_width - l_width,  # Width
-            self.SCREEN_Y - b_height - t_height, # Height
+            self.display.SCREEN_X - r_width - l_width,  # Width
+            self.display.SCREEN_Y - b_height - t_height, # Height
             linewidth=2
         )
 
@@ -126,4 +111,4 @@ class Artist():
 
 
     def blit(self, *args, **kwargs):
-        self.screen.blit(*args, **kwargs)
+        self.display.screen.blit(*args, **kwargs)

@@ -1,7 +1,9 @@
 import os
 import pygame as pg
+from Display import Display
 from Artist import Artist
 from Button import Button
+from AdaptablePixel import AdaptablePixelSize as APS
 from classes import ArrowKeyState, ViewportConfig, PanelConfig, ButtonSizeConfig
 
 os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
@@ -10,18 +12,20 @@ pg.init()
 
 class MediaViewer():
     def __init__(self):
-        self.artist = Artist()
+        self.display = Display()
+        APS(None, display=self.display) # Initialise AdaptablePixelSize engine
+        self.artist = Artist(self.display)
         self.clock = pg.time.Clock()
         self.available_rect = None
 
         # Layout constants
         self.panel_cfg = PanelConfig(
-            banner_height=int(self.artist.SCREEN_Y * 0.08),
-            border_width=int(self.artist.SCREEN_Y * 0.02),
-            panel_width=int(self.artist.SCREEN_Y * 0.08)
+            banner_height=int(self.display.SCREEN_Y * 0.08),
+            border_width=int(self.display.SCREEN_Y * 0.02),
+            panel_width=int(self.display.SCREEN_Y * 0.08)
         )
         self.view_cfg = ViewportConfig(
-            padding=[130, 50],
+            padding=[APS(130), APS(50)],
             n_btns_per_row=4,
             n_cols=3,
         )
@@ -34,7 +38,7 @@ class MediaViewer():
         }
         self.media_type = "movie"
 
-        width = 200
+        width = APS(200)
         height = self.aspect_ratios[self.media_type] * width
         self.btn_cfg = ButtonSizeConfig(
             width=width, height=height,
@@ -174,7 +178,7 @@ class MediaViewer():
         if self.btn_cfg.width > max_allowed_btn_width:
             # If the user has configured a width that is too wide, the
             # separation must be zero and the width must be capped
-            self.btn_cfg.separation = (0, 400)
+            self.btn_cfg.separation = (0, APS(400))
             self.btn_cfg.width = max_allowed_btn_width
             return
 
@@ -182,7 +186,7 @@ class MediaViewer():
         horiz_sep = int(
             (self.available_rect.width - (n_per_row * width)) / (n_per_row - 1)
         )
-        self.btn_cfg.separation = (horiz_sep, 400)
+        self.btn_cfg.separation = (horiz_sep, APS(400))
 
 
 if __name__ == "__main__":
