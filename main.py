@@ -27,8 +27,15 @@ class MediaViewer():
         )
 
         # Button sizing configuration. Use standard 3:4 movie box art aspect ratio
-        height = 260
-        width = int(0.75 * height)
+        self.aspect_ratios = {
+            "movie": 4/3,
+            "video": 3/4, # Other non-film videos
+            "game" : 1/1
+        }
+        self.media_type = "movie"
+
+        width = 200
+        height = self.aspect_ratios[self.media_type] * width
         self.btn_cfg = ButtonSizeConfig(
             width=width, height=height,
             separation=None # Calculated later
