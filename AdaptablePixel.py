@@ -1,3 +1,24 @@
+"""
+AdapatablePixel.py
+
+Defines a single AdaptablePixelSize class to scale fixed pixel
+sizes based on the current display scaling factor
+
+To use:
+    First initialise:
+        APS(None, display)
+    Scale any fixed size:
+        scaled_size = APS(fixed_size)
+
+E.g., if display.scaling == 1.25, APS(100) = 100 / 1.25 = 80
+
+Once a value is converted using APS, any later calculations
+with that value will also be in scaled units
+E.g.,
+    width = APS(100)
+    height = width * 4/3 <-- height will also be in appropriately scaled units
+"""
+
 from Display import Display
 
 
