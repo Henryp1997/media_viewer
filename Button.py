@@ -2,6 +2,7 @@ from pathlib import Path
 import pygame as pg
 import numpy as np
 from Artist import Artist
+from AdaptablePixel import AdaptablePixelSize as APS
 
 HERE = Path(__file__).parent
 
@@ -74,7 +75,7 @@ class Button():
         """ Draw a border around the button when in focus. Uses configurable self.focus_border_color """
         self.artist.draw_rect(
             self.focus_border_color, self.x, self.y, self.w, self.h,
-            linewidth=self.artist.APS(3),
+            linewidth=APS(3),
             border_radius=self.border_radius
         )
 

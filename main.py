@@ -16,7 +16,7 @@ class MediaViewer():
     def __init__(self):
         self.display = Display()
         APS(None, display=self.display) # Initialise AdaptablePixelSize engine
-        self.artist = Artist(self.display, APS)
+        self.artist = Artist(self.display)
         self.clock = pg.time.Clock()
         self.available_rect = None
 
