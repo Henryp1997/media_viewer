@@ -1,9 +1,11 @@
 import pygame as pg
 from Display import Display
+from AdaptablePixel import AdaptablePixelSize
 
 class Artist():
-    def __init__(self, display: Display) -> None:
+    def __init__(self, display: Display, APS: AdaptablePixelSize) -> None:
         self.display = display
+        self.APS = APS
              
 
     def fill_screen(self, color) -> None:
