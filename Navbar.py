@@ -24,13 +24,16 @@ class Navbar():
         self.create_buttons()
 
 
-    def draw(self):
+    def draw(self, focus_idx: list[int]):
         """ Draw the Navbar and its buttons """
         self.artist.draw_rect(
             color=self.cfg.bg_color, x=0, y=0,
             w=self.cfg.navbar_width, h=self.artist.display.SCREEN_Y
         )
-        for btn in self.buttons:
+        for i, btn in enumerate(self.buttons):
+            btn.in_focus = False
+            if focus_idx[1] == -1:
+                btn.in_focus = focus_idx[0] == i
             btn.draw()
 
     

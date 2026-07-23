@@ -75,7 +75,7 @@ class MediaViewer():
                 self.draw_buttons(buttons, persist_btn_dark)
             
             # Draw elements
-            self.navbar.draw()
+            self.navbar.draw(focus_idx=focus_idx)
             self.available_rect = self.draw_borders()
             if self.frame_count == 0:
                 self.calc_btn_separation()
@@ -120,7 +120,7 @@ class MediaViewer():
                 persist_btn_dark[btn] = self.frame_count
             
             focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]
-            btn.in_focus = i == focused_idx
+            btn.in_focus = i == focused_idx and focus_idx[1] != -1
             if btn.in_focus and btn.b > self.available_rect.bottom:
                 # Button is partially obscured. Initiate a row scroll
                 print("Scroll needed")
@@ -172,8 +172,8 @@ class MediaViewer():
             if arrow_state.__dict__[name]:
                 focus_idx[axis] += value
         
-        focus_idx[0] = max(0, focus_idx[0])
-        focus_idx[1] = min(max(0, focus_idx[1]), self.view_cfg.n_btns_per_row - 1)
+        focus_idx[1] = max(-1, focus_idx[1])
+        focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_btns_per_row - 1)
 
 
     def draw_borders(self) -> pg.Rect:
