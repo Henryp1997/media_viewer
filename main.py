@@ -2,6 +2,7 @@ import os
 import pygame as pg
 from Display import Display
 from Artist import Artist
+from NavBar import NavBar
 from Button import Button
 from AdaptablePixel import AdaptablePixelSize as APS
 from classes import ArrowKeyState, ViewportConfig, PanelConfig, ButtonSizeConfig
@@ -13,10 +14,11 @@ pg.init()
 class MediaViewer():
     def __init__(self):
         self.display = Display()
-        APS(None, display=self.display) # Initialise AdaptablePixelSize engine
         self.artist = Artist(self.display)
+        self.navbar = NavBar(self.artist)
         self.clock = pg.time.Clock()
         self.available_rect = None
+        APS(None, display=self.display) # Initialise AdaptablePixelSize engine
 
         # Layout constants
         self.panel_cfg = PanelConfig(
@@ -48,11 +50,11 @@ class MediaViewer():
 
     def start_viewer(self):
         """ Start the application and run the game loop """
-        frame_count = 0
-        persist_btn_dark = {}
+        self.frame_count = 0
+        persist_btn_dark = {}      # Record of the frame in which a button was pressed
+        self.btn_persist_click = 3 # Number of frames for button to appear pressed
         buttons = []
         focus_idx = [0, 0]    # Which button in the matrix is currently in focus
-        btn_persist_click = 3 # Number of frames for button to appear pressed
         arrow_state = ArrowKeyState()
         while True:
             self.clock.tick(60)
@@ -76,36 +78,13 @@ class MediaViewer():
                     return
             
             # Check pressed keys. Only register key press if key not pressed on previous frame
-            focus_idx = self.set_focus_idx(arrow_state, focus_idx)
+            self.set_focus_idx(arrow_state, focus_idx)
             
             if buttons:
-                # Draw buttons and change color if clicked
-                for i, btn in enumerate(buttons):
-                    clicked = False
-                    if mouse_click_pos:
-                        clicked = btn.check_clicked(mouse_click_pos)
-                    
-                    if clicked:
-                        # Button was clicked with mouse cursor, shift focus
-                        focus_idx = [
-                            i // self.view_cfg.n_btns_per_row,
-                            i % self.view_cfg.n_btns_per_row
-                        ]
-                        persist_btn_dark[btn] = frame_count
-                    
-                    btn.in_focus = (i == focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1])
-                    if btn.in_focus:
-                        if btn.b > self.available_rect.bottom:
-                            # Button is partially obscured. Initiate a row scroll
-                            print("Scroll needed")
-
-                    draw_method = "draw_clicked"
-                    if frame_count - persist_btn_dark.get(btn, 0) > btn_persist_click:
-                        # Frame count check to draw 'clicked' version of button longer than just one frame
-                        persist_btn_dark[btn] = 0
-                        draw_method = "draw"
-
-                    getattr(btn, draw_method)()
+                focus_idx = self.update_buttons(
+                    buttons, mouse_click_pos, persist_btn_dark, focus_idx
+                )
+                self.draw_buttons(buttons, persist_btn_dark)
             
             self.available_rect = self.artist.draw_filled_borders(
                 l_width=self.panel_cfg.panel_width,
@@ -119,16 +98,53 @@ class MediaViewer():
                 b_color="#001D4A",
                 order=("left", "right", "top", "bottom")
             )
-            if frame_count == 0:
+            if self.frame_count == 0:
                 self.calc_btn_separation()
-                self.draw_buttons(buttons)
+                self.init_draw_buttons(buttons)
                 self.top_left = (buttons[0].x, buttons[0].y)
 
-            frame_count += 1
+            self.frame_count += 1
             pg.display.update()
 
     
-    def draw_buttons(self, buttons: list[Button]):
+    def update_buttons(
+        self,
+        buttons: list[Button],
+        mouse_click_pos: tuple[int],
+        persist_btn_dark: dict,
+        focus_idx: list[int]
+    ) -> list[int]:
+        """ Update the state of all clickable media Buttons """
+        for i, btn in enumerate(buttons):
+            if mouse_click_pos and btn.check_clicked(mouse_click_pos):
+                # Button was clicked with mouse cursor, shift focus by changing focus_idx
+                focus_idx = [
+                    i // self.view_cfg.n_btns_per_row,
+                    i % self.view_cfg.n_btns_per_row
+                ]
+                persist_btn_dark[btn] = self.frame_count
+            
+            focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]
+            btn.in_focus = i == focused_idx
+            if btn.in_focus and btn.b > self.available_rect.bottom:
+                # Button is partially obscured. Initiate a row scroll
+                print("Scroll needed")
+        
+        return focus_idx
+
+
+    def draw_buttons(self, buttons: list[Button], persist_btn_dark: dict) -> None:
+        """ Draw all buttons after updating their state """
+        for btn in buttons:
+            draw_method = "draw_clicked"
+            if self.frame_count - persist_btn_dark.get(btn, 0) > self.btn_persist_click:
+                # Frame count check to draw 'clicked' version of button longer than just one frame
+                persist_btn_dark[btn] = 0
+                draw_method = "draw"
+            getattr(btn, draw_method)()
+
+
+    def init_draw_buttons(self, buttons: list[Button]):
         """ Draw all buttons in the matrix on the available viewport area """
         n_per_row = self.view_cfg.n_btns_per_row
         n_cols = self.view_cfg.n_cols
@@ -165,7 +181,6 @@ class MediaViewer():
         
         focus_idx[0] = max(0, focus_idx[0])
         focus_idx[1] = min(max(0, focus_idx[1]), self.view_cfg.n_btns_per_row - 1)
-        return focus_idx
 
 
     def calc_btn_separation(self) -> tuple[int]:
