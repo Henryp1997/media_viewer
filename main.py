@@ -110,13 +110,18 @@ class MediaViewer():
         focus_idx: list[int]
     ) -> list[int]:
         """ Update the state of all clickable media Buttons """
-        for i, btn in enumerate(buttons):
+        for i, btn in enumerate(buttons + self.navbar.buttons):
             if mouse_click_pos and btn.check_clicked(mouse_click_pos):
                 # Button was clicked with mouse cursor, shift focus by changing focus_idx
-                focus_idx = [
-                    i // self.view_cfg.n_btns_per_row,
-                    i % self.view_cfg.n_btns_per_row
-                ]
+                if btn.is_navbar_btn:
+                    focus_idx[0] = i - len(buttons)
+                    focus_idx[1] = -1
+                else:
+                    focus_idx = [
+                        i // self.view_cfg.n_btns_per_row,
+                        i % self.view_cfg.n_btns_per_row
+                    ]
+                
                 persist_btn_dark[btn] = self.frame_count
             
             focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]

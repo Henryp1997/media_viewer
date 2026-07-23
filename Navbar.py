@@ -42,12 +42,15 @@ class Navbar():
         pad = self.cfg.padding
         width = self.cfg.navbar_width - 2 * pad
         height = width
-        self.buttons = [
-            Button(
+        self.buttons = []
+        for i in range(4):
+            btn = Button(
                 self.artist, text="x",
                 x=pad,
-                y=self.border_cfg.banner_height + pad,
+                y=self.border_cfg.banner_height + pad + i * (height + pad),
                 w=width, h=height,
-                border_radius=8, bg_colour="#00FF00"
+                border_radius=8,
+                bg_colour="#333333",
+                is_navbar_btn=True
             )
-        ]
+            self.buttons.append(btn)

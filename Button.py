@@ -18,8 +18,9 @@ class Button():
         border_radius: int = 12,
         bg_colour: str = "#0080FF",
         fg_colour: str = "#FFFFFF",
-        in_focus: bool = False, # Draw a white outline if True
-        focus_border_color: str = "#FFFFFF"
+        focus_border_color: str = "#FFFFFF",
+        in_focus: bool = False, # Draw an outline if True
+        is_navbar_btn: bool = False
     ):
         self.artist = artist
         self.text = text
@@ -27,11 +28,12 @@ class Button():
         self.r = self.x + self.w
         self.b = self.y + self.h
         self.border_radius = border_radius
-        self.in_focus = in_focus
         self.focus_border_color = focus_border_color
         self.bg_colour = bg_colour
         self.fg_colour = fg_colour
         self.font = pg.font.Font(HERE / "Consolas-Regular.ttf", 16)
+        self.in_focus = in_focus
+        self.is_navbar_btn = is_navbar_btn
 
 
     def draw(self, bg_colour: str | None = None):
