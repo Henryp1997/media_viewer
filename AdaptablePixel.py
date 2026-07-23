@@ -7,7 +7,7 @@ sizes based on the current display scaling factor
 To use:
     First initialise:
         APS(None, display)
-    Scale any fixed size:
+    Then scale any fixed size:
         scaled_size = APS(fixed_size)
 
 E.g., if display.scaling == 1.25, APS(100) = 100 / 1.25 = 80
