@@ -15,10 +15,10 @@ pg.init()
 class MediaViewer():
     def __init__(self):
         self.display = Display()
-        self.artist = Artist(self.display)
+        APS(None, display=self.display) # Initialise AdaptablePixelSize engine
+        self.artist = Artist(self.display, APS)
         self.clock = pg.time.Clock()
         self.available_rect = None
-        APS(None, display=self.display) # Initialise AdaptablePixelSize engine
 
         # Layout configuration
         self.border_cfg = BorderConfig(
@@ -157,9 +157,7 @@ class MediaViewer():
                     border_radius=26
                 )
             )
-        
-        return buttons
-    
+            
 
     def set_focus_idx(self, arrow_state: ArrowKeyState, focus_idx: list[int]):
         """ 
