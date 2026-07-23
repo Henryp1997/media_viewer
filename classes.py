@@ -14,11 +14,22 @@ class ArrowKeyState():
 
 
 @dataclass
-class PanelConfig():
+class BorderConfig():
     """ Configuration for application panels and borders """
     banner_height: float # Top panel height
     border_width: float  # Right edge width
-    panel_width: float   # Left navigation panel width
+    navbar_width: float  # Left navigation bar width
+    right_color: str
+    top_color: str
+    bottom_color: str
+
+
+@dataclass
+class NavbarConfig():
+    """ Configuration for the navigation bar """
+    navbar_width: float # Left navigation bar width
+    padding: float      # Padding between buttons and edge of navbar
+    bg_color: str
 
 
 @dataclass

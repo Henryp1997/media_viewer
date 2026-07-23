@@ -47,18 +47,15 @@ class Artist():
         t_height: int,
         b_height: int,
         padding: tuple | list,
-        l_color: str,
         r_color: str,
         t_color: str,
         b_color: str,
-        order: tuple = ("left", "right", "top", "bottom")
+        order: tuple = ("right", "top", "bottom")
     ):
-        """ Draw four borders in the available window space """
-        def draw_left():
-            self.draw_rect(
-                color=l_color, x=0, y=0,
-                w=l_width, h=self.display.SCREEN_Y
-            )
+        """
+        Draw three borders in the available window space. Do not
+        draw the left border as that is handled by Navbar.draw()
+        """
         def draw_right():
             self.draw_rect(
                 color=r_color,
@@ -77,7 +74,7 @@ class Artist():
                 w=self.display.SCREEN_X, h=b_height
             )
         draw_methods = {
-            "left": draw_left, "right": draw_right,
+            "right": draw_right,
             "top": draw_top, "bottom": draw_bottom
         }
         for side in order:

@@ -2,10 +2,11 @@ import os
 import pygame as pg
 from Display import Display
 from Artist import Artist
-from NavBar import NavBar
+from Navbar import Navbar
 from Button import Button
 from AdaptablePixel import AdaptablePixelSize as APS
-from classes import ArrowKeyState, ViewportConfig, PanelConfig, ButtonSizeConfig
+from classes import ArrowKeyState, ViewportConfig, BorderConfig, NavbarConfig, ButtonSizeConfig
+from consts import ASPECT_RATIOS, DEFAULT_WIDTHS
 
 os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 pg.init()
@@ -15,98 +16,92 @@ class MediaViewer():
     def __init__(self):
         self.display = Display()
         self.artist = Artist(self.display)
-        self.navbar = NavBar(self.artist)
         self.clock = pg.time.Clock()
         self.available_rect = None
         APS(None, display=self.display) # Initialise AdaptablePixelSize engine
 
-        # Layout constants
-        self.panel_cfg = PanelConfig(
+        # Layout configuration
+        self.border_cfg = BorderConfig(
             banner_height=int(self.display.SCREEN_Y * 0.08),
             border_width=int(self.display.SCREEN_Y * 0.02),
-            panel_width=int(self.display.SCREEN_Y * 0.08)
+            navbar_width=int(self.display.SCREEN_Y * 0.08),
+            top_color="#003687",
+            bottom_color="#001D4A",
+            right_color="#001D4A"
         )
         self.view_cfg = ViewportConfig(
             padding=[APS(130), APS(50)],
             n_btns_per_row=4,
             n_cols=3,
         )
+        self.navbar_cfg = NavbarConfig(
+            navbar_width=self.border_cfg.navbar_width,
+            padding=APS(10),
+            bg_color="#001D4A"
+        )
+
+        self.navbar = Navbar(self.artist, self.navbar_cfg, self.border_cfg)
 
         # Button sizing configuration. Use standard 3:4 movie box art aspect ratio
-        self.aspect_ratios = {
-            "movie": 4/3,
-            "video": 3/4, # Other non-film videos
-            "game" : 1/1
-        }
         self.media_type = "movie"
-
-        width = APS(200)
-        height = self.aspect_ratios[self.media_type] * width
+        width = APS(DEFAULT_WIDTHS[self.media_type])
+        height = ASPECT_RATIOS[self.media_type] * width
         self.btn_cfg = ButtonSizeConfig(
             width=width, height=height,
             separation=None # Calculated later
         )
-        
+
+        # Initialise variables
+        self.frame_count = 0
+        self.btn_persist_click = 3 # Number of frames for button to appear pressed
+        self.arrow_state = ArrowKeyState()
+
 
     def start_viewer(self):
         """ Start the application and run the game loop """
-        self.frame_count = 0
-        persist_btn_dark = {}      # Record of the frame in which a button was pressed
-        self.btn_persist_click = 3 # Number of frames for button to appear pressed
         buttons = []
+        persist_btn_dark = {} # Record of the frame number in which a button was pressed
         focus_idx = [0, 0]    # Which button in the matrix is currently in focus
-        arrow_state = ArrowKeyState()
         while True:
             self.clock.tick(60)
             self.artist.fill_screen(color="#1F1F1F")
-            self.artist.draw_border("#FF0000", offset=6)
 
-            mouse_click_pos = None
-            arrow_state.clear() # Crucial for debounce
-            for event in pg.event.get():
-                if event.type == pg.MOUSEBUTTONDOWN:
-                    mouse_click_pos = event.pos
-                    print(mouse_click_pos)
-                elif event.type == pg.KEYDOWN:
-                    for key, name in zip(
-                        (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
-                        ("right", "left", "up", "down")
-                    ):
-                        arrow_state.__dict__[name] = (event.key == key)
-                elif event.type == pg.QUIT:
-                    pg.quit()
-                    return
-            
-            # Check pressed keys. Only register key press if key not pressed on previous frame
-            self.set_focus_idx(arrow_state, focus_idx)
-            
+            # Update elements
+            events = pg.event.get()
+            mouse_click_pos = self.update_arrow_state(events)
+            self.set_focus_idx(self.arrow_state, focus_idx)
             if buttons:
-                focus_idx = self.update_buttons(
-                    buttons, mouse_click_pos, persist_btn_dark, focus_idx
-                )
+                focus_idx = self.update_buttons(buttons, mouse_click_pos, persist_btn_dark, focus_idx)
                 self.draw_buttons(buttons, persist_btn_dark)
             
-            self.available_rect = self.artist.draw_filled_borders(
-                l_width=self.panel_cfg.panel_width,
-                r_width=self.panel_cfg.border_width,
-                t_height=self.panel_cfg.banner_height,
-                b_height=self.panel_cfg.border_width,
-                padding=self.view_cfg.padding,
-                l_color="#001D4A",
-                r_color="#001D4A",
-                t_color="#003687",
-                b_color="#001D4A",
-                order=("left", "right", "top", "bottom")
-            )
+            # Draw elements
+            self.navbar.draw()
+            self.available_rect = self.draw_borders()
             if self.frame_count == 0:
                 self.calc_btn_separation()
                 self.init_draw_buttons(buttons)
-                self.top_left = (buttons[0].x, buttons[0].y)
 
+            self.check_quit(events)
             self.frame_count += 1
             pg.display.update()
 
     
+    def update_arrow_state(self, events):
+        """ Update the state of directional arrow inputs """
+        mouse_click_pos = None
+        self.arrow_state.clear() # Crucial for debounce
+        for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_click_pos = event.pos
+            elif event.type == pg.KEYDOWN:
+                for key, name in zip(
+                    (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
+                    ("right", "left", "up", "down")
+                ):
+                    self.arrow_state.__dict__[name] = (event.key == key)
+        return mouse_click_pos
+
+
     def update_buttons(
         self,
         buttons: list[Button],
@@ -183,6 +178,22 @@ class MediaViewer():
         focus_idx[1] = min(max(0, focus_idx[1]), self.view_cfg.n_btns_per_row - 1)
 
 
+    def draw_borders(self) -> pg.Rect:
+        """ Draw application borders and calculate the available area for GUI elements """
+        available_rect = self.artist.draw_filled_borders(
+            l_width=self.border_cfg.navbar_width,
+            r_width=self.border_cfg.border_width,
+            t_height=self.border_cfg.banner_height,
+            b_height=self.border_cfg.border_width,
+            padding=self.view_cfg.padding,
+            r_color=self.border_cfg.right_color,
+            t_color=self.border_cfg.top_color,
+            b_color=self.border_cfg.bottom_color,
+            order=("right", "top", "bottom")
+        )
+        return available_rect
+
+
     def calc_btn_separation(self) -> tuple[int]:
         """
         Calculate the required horizontal and vertical separation
@@ -202,6 +213,14 @@ class MediaViewer():
             (self.available_rect.width - (n_per_row * width)) / (n_per_row - 1)
         )
         self.btn_cfg.separation = (horiz_sep, APS(400))
+
+
+    def check_quit(self, events):
+        """ Check for the quit event """
+        for event in events:
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
 
 
 if __name__ == "__main__":
