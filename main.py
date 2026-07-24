@@ -52,9 +52,14 @@ class MediaViewer():
         )
 
         # Initialise variables
-        self.frame_count = 0
-        self.btn_persist_click = 3 # Number of frames for button to appear pressed
+        self.frame_count: int = 0
         self.arrow_state = ArrowKeyState()
+
+        # Animation behaviour
+        self.scroll_direction: int | None = None
+        self.btn_scroll_frame: int | None = None
+        self.btn_scroll_anim_length: int  = 10 # Scroll duration in frames
+        self.btn_persist_click: int = 3 # Number of frames for button to appear pressed
 
 
     def start_viewer(self):
@@ -87,22 +92,6 @@ class MediaViewer():
             self.frame_count += 1
             pg.display.update()
 
-    
-    def update_arrow_state(self, events):
-        """ Update the state of directional arrow inputs """
-        mouse_click_pos = None
-        self.arrow_state.clear() # Crucial for debounce
-        for event in events:
-            if event.type == pg.MOUSEBUTTONDOWN:
-                mouse_click_pos = event.pos
-            elif event.type == pg.KEYDOWN:
-                for key, name in zip(
-                    (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
-                    ("right", "left", "up", "down")
-                ):
-                    self.arrow_state.__dict__[name] = (event.key == key)
-        return mouse_click_pos
-
 
     def update_buttons(
         self,
@@ -112,7 +101,10 @@ class MediaViewer():
         focus_idx: list[int]
     ) -> list[int]:
         """ Update the state of all clickable media Buttons """
-        scroll_direction = None
+        is_scrolling = False
+        if self.btn_scroll_frame is not None:
+            is_scrolling = (self.frame_count - self.btn_scroll_frame < self.btn_scroll_anim_length)
+
         for i, btn in enumerate(buttons + self.navbar.buttons):
             if mouse_click_pos and btn.check_clicked(mouse_click_pos):
                 # Button was clicked with mouse cursor, shift focus by changing focus_idx
@@ -129,27 +121,35 @@ class MediaViewer():
             
             focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]
             btn.in_focus = i == focused_idx and focus_idx[1] != -1
-            if btn.in_focus and btn.b > self.available_rect.bottom:
-                # Button is partially obscured by the bottom border. Initiate a row scroll upwards
-                scroll_direction = -1
-            elif btn.in_focus and btn.y < self.available_rect.top:
-                # Button is partially obscured by the top banner. Initiate a row scroll downwards
-                scroll_direction = 1
 
-        if scroll_direction is not None:
-            self.scroll_buttons(buttons, scroll_direction)
+            if not is_scrolling:
+                # Only check for scrolls if not currently scrolling
+                if btn.in_focus and btn.b > self.available_rect.bottom:
+                    # Button is partially obscured by the bottom border. Initiate a row scroll upwards
+                    self.scroll_direction = -1
+                    self.btn_scroll_frame = self.frame_count
+                elif btn.in_focus and btn.y < self.available_rect.top:
+                    # Button is partially obscured by the top banner. Initiate a row scroll downwards
+                    self.scroll_direction = 1
+                    self.btn_scroll_frame = self.frame_count
+
+        if is_scrolling:
+            self.scroll_buttons(buttons)
         
         return focus_idx
 
 
-    def scroll_buttons(self, buttons: list[Button], scroll_direction: int):
+    def scroll_buttons(self, buttons: list[Button]):
         """
         User has highlighted a button which is above or below the rows
         of fully visible buttons. This method will scroll all buttons by
         one row grid separation to bring the highlighted button into view
         """
+        max_movement = self.btn_cfg.separation[1] # In APS units already
         for btn in buttons:
-            y_sep = scroll_direction * self.btn_cfg.separation[1] / 1.5
+            proportion = 1 / self.btn_scroll_anim_length
+            movement = max_movement * proportion
+            y_sep = self.scroll_direction * movement
             btn.move(axis=1, delta=y_sep)
 
 
@@ -182,7 +182,7 @@ class MediaViewer():
                     border_radius=26
                 )
             )
-            
+
 
     def set_focus_idx(self, arrow_state: ArrowKeyState, focus_idx: list[int]):
         """ 
@@ -199,6 +199,22 @@ class MediaViewer():
         
         focus_idx[1] = max(-1, focus_idx[1])
         focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_rows - 1)
+
+
+    def update_arrow_state(self, events):
+        """ Update the state of directional arrow inputs """
+        mouse_click_pos = None
+        self.arrow_state.clear() # Crucial for debounce
+        for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_click_pos = event.pos
+            elif event.type == pg.KEYDOWN:
+                for key, name in zip(
+                    (pg.K_RIGHT, pg.K_LEFT, pg.K_UP, pg.K_DOWN),
+                    ("right", "left", "up", "down")
+                ):
+                    self.arrow_state.__dict__[name] = (event.key == key)
+        return mouse_click_pos
 
 
     def draw_borders(self) -> pg.Rect:

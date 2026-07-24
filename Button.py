@@ -37,7 +37,12 @@ class Button():
 
 
     def move(self, axis: int, delta: int):
-        """ Move this Button horizontally (axis = 0) or vertically (axis = 1) """
+        """
+        Move this Button horizontally (axis = 0) or vertically (axis = 1)
+        `delta` can be positive or negative but care needs to be taken with
+        the y-axis as PyGame defines (0, 0) as the top left corner of the
+        window, therefore positive `delta` for the y-axis means 'move downwards'
+        """
         if axis == 0:
             self.x += delta
             self.r += delta
