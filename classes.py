@@ -37,7 +37,7 @@ class ViewportConfig():
     """ Configuration for the available viewing area """
     padding: tuple | list # Padding on the [left/right, top/bottom] of the available viewport
     n_btns_per_row: float # Number of buttons per row
-    n_cols: float         # Number of columns of buttons
+    n_rows: float         # Number of rows of buttons
 
 
 @dataclass

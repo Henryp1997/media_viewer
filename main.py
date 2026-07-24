@@ -32,7 +32,7 @@ class MediaViewer():
         self.view_cfg = ViewportConfig(
             padding=[APS(130), APS(50)],
             n_btns_per_row=4,
-            n_cols=3,
+            n_rows=3,
         )
         self.navbar_cfg = NavbarConfig(
             navbar_width=self.border_cfg.navbar_width,
@@ -71,15 +71,17 @@ class MediaViewer():
             mouse_click_pos = self.update_arrow_state(events)
             self.set_focus_idx(self.arrow_state, focus_idx)
             if buttons:
-                focus_idx = self.update_buttons(buttons, mouse_click_pos, persist_btn_dark, focus_idx)
-                self.draw_buttons(buttons, persist_btn_dark)
+                focus_idx = self.update_buttons(
+                    buttons, mouse_click_pos, persist_btn_dark, focus_idx
+                )
             
             # Draw elements
-            self.navbar.draw(focus_idx=focus_idx)
+            self.draw_buttons(buttons, persist_btn_dark)
             self.available_rect = self.draw_borders()
             if self.frame_count == 0:
                 self.calc_btn_separation()
                 self.init_draw_buttons(buttons)
+            self.navbar.draw(focus_idx=focus_idx)
 
             self.check_quit(events)
             self.frame_count += 1
@@ -110,6 +112,7 @@ class MediaViewer():
         focus_idx: list[int]
     ) -> list[int]:
         """ Update the state of all clickable media Buttons """
+        scroll_direction = None
         for i, btn in enumerate(buttons + self.navbar.buttons):
             if mouse_click_pos and btn.check_clicked(mouse_click_pos):
                 # Button was clicked with mouse cursor, shift focus by changing focus_idx
@@ -127,10 +130,27 @@ class MediaViewer():
             focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]
             btn.in_focus = i == focused_idx and focus_idx[1] != -1
             if btn.in_focus and btn.b > self.available_rect.bottom:
-                # Button is partially obscured. Initiate a row scroll
-                print("Scroll needed")
+                # Button is partially obscured by the bottom border. Initiate a row scroll upwards
+                scroll_direction = -1
+            elif btn.in_focus and btn.y < self.available_rect.top:
+                # Button is partially obscured by the top banner. Initiate a row scroll downwards
+                scroll_direction = 1
+
+        if scroll_direction is not None:
+            self.scroll_buttons(buttons, scroll_direction)
         
         return focus_idx
+
+
+    def scroll_buttons(self, buttons: list[Button], scroll_direction: int):
+        """
+        User has highlighted a button which is above or below the rows
+        of fully visible buttons. This method will scroll all buttons by
+        one row grid separation to bring the highlighted button into view
+        """
+        for btn in buttons:
+            y_sep = scroll_direction * self.btn_cfg.separation[1] / 1.5
+            btn.move(axis=1, delta=y_sep)
 
 
     def draw_buttons(self, buttons: list[Button], persist_btn_dark: dict) -> None:
@@ -147,8 +167,8 @@ class MediaViewer():
     def init_draw_buttons(self, buttons: list[Button]):
         """ Draw all buttons in the matrix on the available viewport area """
         n_per_row = self.view_cfg.n_btns_per_row
-        n_cols = self.view_cfg.n_cols
-        n_total = n_per_row * n_cols
+        n_rows = self.view_cfg.n_rows
+        n_total = n_per_row * n_rows
         btn_sep = self.btn_cfg.separation
         btn_width = self.btn_cfg.width
 
@@ -178,7 +198,7 @@ class MediaViewer():
                 focus_idx[axis] += value
         
         focus_idx[1] = max(-1, focus_idx[1])
-        focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_btns_per_row - 1)
+        focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_rows - 1)
 
 
     def draw_borders(self) -> pg.Rect:

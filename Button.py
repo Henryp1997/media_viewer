@@ -36,6 +36,18 @@ class Button():
         self.is_navbar_btn = is_navbar_btn
 
 
+    def move(self, axis: int, delta: int):
+        """ Move this Button horizontally (axis = 0) or vertically (axis = 1) """
+        if axis == 0:
+            self.x += delta
+            self.r += delta
+        elif axis == 1:
+            self.y += delta
+            self.b += delta
+        else:
+            raise ValueError(f"Invalid axis value. Got {axis!r}, expected 0 or 1.")
+
+
     def draw(self, bg_colour: str | None = None):
         """ Draw the button """
         if bg_colour is None:
