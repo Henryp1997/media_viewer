@@ -54,6 +54,7 @@ class MediaViewer():
         # Initialise variables
         self.frame_count: int = 0
         self.arrow_state = ArrowKeyState()
+        self.navbar_in_focus = False
 
         # Animation behaviour
         self.scroll_direction: int | None = None
@@ -119,19 +120,24 @@ class MediaViewer():
                 
                 persist_btn_dark[btn] = self.frame_count
             
-            focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]
-            btn.in_focus = i == focused_idx and focus_idx[1] != -1
+            if focus_idx[1] == -1:
+                self.navbar_in_focus = True
+                btn.in_focus = focus_idx[0] == i - len(buttons)
+            else:
+                self.navbar_in_focus = False
+                focused_idx = focus_idx[0] * self.view_cfg.n_btns_per_row + focus_idx[1]
+                btn.in_focus = i == focused_idx and focus_idx[1] != -1
 
-            if not is_scrolling:
-                # Only check for scrolls if not currently scrolling
-                if btn.in_focus and btn.b > self.available_rect.bottom:
-                    # Button is partially obscured by the bottom border. Initiate a row scroll upwards
-                    self.scroll_direction = -1
-                    self.btn_scroll_frame = self.frame_count
-                elif btn.in_focus and btn.y < self.available_rect.top:
-                    # Button is partially obscured by the top banner. Initiate a row scroll downwards
-                    self.scroll_direction = 1
-                    self.btn_scroll_frame = self.frame_count
+                if not is_scrolling:
+                    # Only check for scrolls if not currently scrolling
+                    if btn.in_focus and btn.b > self.available_rect.bottom:
+                        # Button is partially obscured by the bottom border. Initiate a row scroll upwards
+                        self.scroll_direction = -1
+                        self.btn_scroll_frame = self.frame_count
+                    elif btn.in_focus and btn.y < self.available_rect.top:
+                        # Button is partially obscured by the top banner. Initiate a row scroll downwards
+                        self.scroll_direction = 1
+                        self.btn_scroll_frame = self.frame_count
 
         if is_scrolling:
             self.scroll_buttons(buttons)
@@ -198,7 +204,10 @@ class MediaViewer():
                 focus_idx[axis] += value
         
         focus_idx[1] = max(-1, focus_idx[1])
-        focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_rows - 1)
+        if self.navbar_in_focus:
+            focus_idx[0] = min(max(0, focus_idx[0]), self.navbar.n_btns - 1)
+        if not self.navbar_in_focus:
+            focus_idx[0] = min(max(0, focus_idx[0]), self.view_cfg.n_rows - 1)
 
 
     def update_arrow_state(self, events):

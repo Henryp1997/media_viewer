@@ -54,3 +54,4 @@ class Navbar():
                 is_navbar_btn=True
             )
             self.buttons.append(btn)
+        self.n_btns = len(self.buttons)
