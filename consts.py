@@ -12,7 +12,13 @@ ASPECT_RATIOS = {
 }
 
 DEFAULT_WIDTHS = {
-    "movie": 240,
-    "video": 280,
-    "game" : 280
+    "movie": 320,
+    "video": 360,
+    "game" : 320
+}
+
+DEFAULT_Y_SEPS = {
+    "movie": 550,
+    "video": 350,
+    "game" : 420
 }

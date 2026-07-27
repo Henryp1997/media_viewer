@@ -6,7 +6,7 @@ from Navbar import Navbar
 from Button import Button
 from AdaptablePixel import AdaptablePixelSize as APS
 from classes import ArrowKeyState, ViewportConfig, BorderConfig, NavbarConfig, ButtonSizeConfig
-from consts import ASPECT_RATIOS, DEFAULT_WIDTHS
+from consts import ASPECT_RATIOS, DEFAULT_WIDTHS, DEFAULT_Y_SEPS
 
 os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 pg.init()
@@ -42,8 +42,8 @@ class MediaViewer():
 
         self.navbar = Navbar(self.artist, self.navbar_cfg, self.border_cfg)
 
-        # Button sizing configuration. Use standard 3:4 movie box art aspect ratio
-        self.media_type = "movie"
+        # Button sizing configuration
+        self.media_type = "video"
         width = APS(DEFAULT_WIDTHS[self.media_type])
         height = ASPECT_RATIOS[self.media_type] * width
         self.btn_cfg = ButtonSizeConfig(
@@ -252,7 +252,7 @@ class MediaViewer():
         if self.btn_cfg.width > max_allowed_btn_width:
             # If the user has configured a width that is too wide, the
             # separation must be zero and the width must be capped
-            self.btn_cfg.separation = (0, APS(400))
+            self.btn_cfg.separation = (0, APS(DEFAULT_Y_SEPS[self.media_type]))
             self.btn_cfg.width = max_allowed_btn_width
             return
 
@@ -260,7 +260,7 @@ class MediaViewer():
         horiz_sep = int(
             (self.available_rect.width - (n_per_row * width)) / (n_per_row - 1)
         )
-        self.btn_cfg.separation = (horiz_sep, APS(400))
+        self.btn_cfg.separation = (horiz_sep, APS(DEFAULT_Y_SEPS[self.media_type]))
 
 
     def check_quit(self, events):
